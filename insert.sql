@@ -1,5 +1,6 @@
 -- 11 tài khoản mẫu, 1-5 là passenger, 6-10 là driver
-INSERT INTO ACCOUNT 
+-- bảng ko có foreign
+INSERT INTO USER_ACCOUNT 
 (ACCOUNT_ID, NAME, PHONE_NUMBER, EMAIL, ACCOUNT_PASSWORD, GENDER, AVATAR) VALUES
 (1,'Đặng Quí', '0474213546', 'dangqui@example.com', 'dangqui', 'Male', NULL),
 (2,'Vương Anh Tuấn', '036988860', 'vuonganhtuan@example.com', 'vuonganhtuan', 'Male', NULL),
@@ -71,6 +72,7 @@ INSERT INTO SAVED_LOCATION
 (4,'Circle K cs1','268 Đ. Lý Thường Kiệt, Phường Diên Hồng, Hồ Chí Minh',10.772807, 106.658603)
 (5,'Sân tập đá banh Phú thọ','1 Đ. Lữ Gia, Phường 15, Phú Thọ, Hồ Chí Minh',10.769086, 106.658159)
 
+-- bảng ko có foreign
 INSERT INTO USER_NOTIFICATION
 (NOTIFICATION_ID,TITLE, CONTENT) VALUES 
 (1,'Deal sốc năm mới','Từ 1/1/2026 đến ngày 3/1/2026, giảm 30% cho cuốc đi xe ôtô.'),
@@ -87,6 +89,7 @@ INSERT INTO VEHICLE
 (4,'54AWJ-295.1','Honda','Wave RSX','Đen',1,9,9),            --driver số 9 loại 1 (xe máy standard)
 (5,'53MGC-597.04','Honda','CBR300R','Đỏ',1,10,10);           --driver số 10 loại 1 (xe máy standard)
 
+-- bảng ko có foreign
 INSERT INTO TRANSPORT_MODE 
 (TYPE, SEAT_CAPACITY, SERVICE_LEVEL) VALUES 
 (1,'Bike', 1, 'Standard'),
@@ -273,6 +276,7 @@ INSERT INTO PAYMENT_TRANSACTION
 -- Trip 7: Passenger 1 (Đặng Quí)
 (7, 60000, '2026-03-10 06:11:00', FALSE, 0, 7, 1);
 
+-- bảng ko có foreign
 INSERT INTO DISCOUNT 
 (MAX_USAGE,VALID_UNTIL_DATE,DISCOUNT_TYPE,PERCENTAGE_DISCOUNT,AMOUNT_DISCOUNT) VALUES
 (5, '2026-01-01 23:59:59', 'Percentage', 0.30, NULL),
