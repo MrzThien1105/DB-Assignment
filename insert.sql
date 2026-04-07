@@ -61,16 +61,16 @@ INSERT INTO BANK_ACCOUNT
 (2,'BIDV','513661723',7),
 (3,'BIDV','551768767',8),
 (4,'Vietcombank','802767',9),
-(5,'Vietcombank','370610',10),
+(5,'Vietcombank','370610',10);
 
 INSERT INTO SAVED_LOCATION
 (PASSENGER_ID, SUGGESTIVE_NAME, ADDRESS, COORDINATE_Y, COORDINATE_X) VALUES
-(1,'BK cs1','268 Đ. Lý Thường Kiệt, Phường Diên Hồng, Hồ Chí Minh',10.772011, 106.657882)
-(2,'Cổng BK cs2','Khu phố Tân Lập, Phường Đông Hòa, TP.HCM',10.880458, 106.805564)
-(3,'VP tuyển sinh quốc tế','Kiosk 98, 142A Tô Hiến Thành, Phường Diên Hồng, TP.HCM',10.773533, 106.661055)
-(3,'Khoa CSE','268 Đ. Lý Thường Kiệt, Phường Diên Hồng, Hồ Chí Minh',10.773500, 106.660683)
-(4,'Circle K cs1','268 Đ. Lý Thường Kiệt, Phường Diên Hồng, Hồ Chí Minh',10.772807, 106.658603)
-(5,'Sân tập đá banh Phú thọ','1 Đ. Lữ Gia, Phường 15, Phú Thọ, Hồ Chí Minh',10.769086, 106.658159)
+(1,'BK cs1','268 Đ. Lý Thường Kiệt, Phường Diên Hồng, Hồ Chí Minh',10.772011, 106.657882),
+(2,'Cổng BK cs2','Khu phố Tân Lập, Phường Đông Hòa, TP.HCM',10.880458, 106.805564),
+(3,'VP tuyển sinh quốc tế','Kiosk 98, 142A Tô Hiến Thành, Phường Diên Hồng, TP.HCM',10.773533, 106.661055),
+(3,'Khoa CSE','268 Đ. Lý Thường Kiệt, Phường Diên Hồng, Hồ Chí Minh',10.773500, 106.660683),
+(4,'Circle K cs1','268 Đ. Lý Thường Kiệt, Phường Diên Hồng, Hồ Chí Minh',10.772807, 106.658603),
+(5,'Sân tập đá banh Phú thọ','1 Đ. Lữ Gia, Phường 15, Phú Thọ, Hồ Chí Minh',10.769086, 106.658159);
 
 -- bảng ko có foreign
 INSERT INTO USER_NOTIFICATION

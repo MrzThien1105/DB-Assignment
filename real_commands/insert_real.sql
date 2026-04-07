@@ -37,3 +37,73 @@ INSERT INTO DISCOUNT
 (5, '2026-06-01 23:59:59', 'Percentage', 0.20, NULL),
 (5, '2026-05-01 23:59:59', 'Amount', NULL, 15000),
 (5, '2026-05-01 23:59:59', 'Amount', NULL, 50000);
+
+INSERT INTO ACCOUNT_COMMUNICATION
+(ACCOUNT_ID, COMMUNICATION_TYPE) VALUES
+(1, 'Email'),(1, 'SMS'),(1, 'Push Notification'),
+(2, 'Email'),(2, 'SMS'),(2, 'Push Notification'),
+(3, 'Email'),(3, 'SMS'),(3, 'Push Notification'),
+(4, 'Email'),(4, 'SMS'),(4, 'Push Notification'),
+(5, 'Email'),(5, 'SMS'),(5, 'Push Notification'),
+(6, 'Email'),(6, 'SMS'),(6, 'Push Notification'),
+(7, 'Email'),(7, 'SMS'),(7, 'Push Notification'),
+(8, 'Email'),(8, 'SMS'),(8, 'Push Notification'),
+(9, 'Email'),(9, 'SMS'),(9, 'Push Notification'),
+(10, 'Email'),(10, 'SMS'),(10, 'Push Notification');
+
+INSERT INTO PASSENGER
+(ACCOUNT_ID, GRABCOINS) VALUES
+(1,2002),
+(2,1975),
+(3,100),
+(4,91),
+(5,7);
+
+INSERT INTO DRIVER
+(ACCOUNT_ID, DRIVER_LICENSE_GRADE, CURRENT_BALANCE) VALUES
+(6,'A1',1000000),
+(7,'A1',1500000),
+(8,'B2',750000),
+(9,'A1',600000),
+(10,'A2',2000000);
+
+INSERT INTO REFERRAL
+(DRIVER_ID, REFERRER_ID) VALUES
+(6,10),
+(7,6),
+(8,6),
+(9,6),
+(10,6);
+
+INSERT INTO bank_account
+(BANK_NAME,ACCOUNT_NUMBER,DRIVER_ID) VALUES
+('BIDV','179784021',6),
+('BIDV','513661723',7),
+('BIDV','551768767',8),
+('Vietcombank','802767',9),
+('Vietcombank','370610',10);
+
+INSERT INTO SAVED_LOCATION
+(PASSENGER_ID, SUGGESTIVE_NAME, ADDRESS, COORDINATE_Y, COORDINATE_X) VALUES
+(1,'BK cs1','268 Đ. Lý Thường Kiệt, Phường Diên Hồng, Hồ Chí Minh',10.772011, 106.657882),
+(2,'Cổng BK cs2','Khu phố Tân Lập, Phường Đông Hòa, TP.HCM',10.880458, 106.805564),
+(3,'VP tuyển sinh quốc tế','Kiosk 98, 142A Tô Hiến Thành, Phường Diên Hồng, TP.HCM',10.773533, 106.661055),
+(3,'Khoa CSE','268 Đ. Lý Thường Kiệt, Phường Diên Hồng, Hồ Chí Minh',10.773500, 106.660683),
+(4,'Circle K cs1','268 Đ. Lý Thường Kiệt, Phường Diên Hồng, Hồ Chí Minh',10.772807, 106.658603),
+(5,'Sân tập đá banh Phú thọ','1 Đ. Lữ Gia, Phường 15, Phú Thọ, Hồ Chí Minh',10.769086, 106.658159);
+
+INSERT INTO VEHICLE
+(PLATE_NUMBER,MAKE,MODEL,COLOR,CAPACITY,REGISTRANT_ID,USING_DRIVER_ID) VALUES
+('50B-292.20','Honda','Lead 125','Vàng',1,6,6),            #driver số 6 loại 1 (xe máy standard)
+('59CHX-228.03','Honda','SH Mode 125','Xanh dương',1,7,7), #driver số 7 loại 2 (xe máy saver)
+('56CNN-856.86','Honda','Civic','Trắng',6,8,8),            #driver số 8 loại 6 (xe oto 6 chỗ standard)
+('54AWJ-295.1','Honda','Wave RSX','Đen',1,9,9),            #driver số 9 loại 1 (xe máy standard)
+('53MGC-597.04','Honda','CBR300R','Đỏ',1,10,10);           #driver số 10 loại 1 (xe máy standard)
+
+INSERT INTO VEHICLE_CATEGORIZATION
+(VEHICLE_ID, MODE_ID) VALUES
+(1,1),
+(2,2),
+(3,6),
+(4,1),
+(5,1);
