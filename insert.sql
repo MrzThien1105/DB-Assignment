@@ -1,6 +1,6 @@
 USE grab;
 
-INSERT INTO user_account
+INSERT INTO USER_ACCOUNT
 (NAME, PHONE_NUMBER, EMAIL, ACCOUNT_PASSWORD, GENDER, AVATAR) VALUES
 ('Đặng Quí', '0474213546', 'dangqui@example.com', 'dangqui', 'Male', NULL),
 ('Vương Anh Tuấn', '036988860', 'vuonganhtuan@example.com', 'vuonganhtuan', 'Male', NULL),
@@ -15,7 +15,7 @@ INSERT INTO user_account
 
 -- coi lại user_notification này đi. viết đơn giản hóa lại để phù hợp với bảng discount. 
 -- Summary: ko cần chia mức, cứ giảm số hoặc phần trăm, nói rõ. 
-INSERT INTO user_notification
+INSERT INTO USER_NOTIFICATION
 (TITLE, CONTENT,TIME) VALUES
 ('Deal sốc năm mới','Từ 1/1/2026 đến ngày 3/1/2026, giảm 30% cho cuốc đi xe ôtô.','2026-01-01 09:30:00'),
 ('Khao trọn ngày cá tháng tư','Trong ngày 1/4/2026, giảm 15% nếu thanh toán bằng thẻ tín dụng OCB','2026-04-01 09:00:00'),
@@ -23,7 +23,7 @@ INSERT INTO user_notification
 ('Liên kết ví Momo, trao deal liền tay!','Đến 1/6/2026, liên kết ví Momo để nhận ngay ưu đãi giảm 30.000 cho cuốc đi xe ôtô.','2026-02-13 09:30:00'),
 ('Ưu đãi đặc biệt từ Vietcombank','Từ hôm nay đến ngày 1/5/2026, Vietcombank có ưu đãi dành cho chủ thẻ Vietcombank, giảm 20% cho các cuốc của tất cả các loại phương tiện','2026-02-14 09:30:00');
 
-INSERT INTO account_notification
+INSERT INTO ACCOUNT_NOTIFICATION
 (ACCOUNT_ID, NOTIFICATION_ID) VALUES
 (1,1),
 (1,2),
@@ -51,7 +51,7 @@ INSERT INTO account_notification
 (5,4),
 (5,5);
 
-INSERT INTO account_communication
+INSERT INTO ACCOUNT_COMMUNICATION
 (ACCOUNT_ID, COMMUNICATION_TYPE) VALUES
 (1, 'Email'),(1, 'SMS'),(1, 'Push Notification'),
 (2, 'Email'),(2, 'SMS'),(2, 'Push Notification'),
@@ -64,7 +64,7 @@ INSERT INTO account_communication
 (9, 'Email'),(9, 'SMS'),(9, 'Push Notification'),
 (10, 'Email'),(10, 'SMS'),(10, 'Push Notification');
 
-INSERT INTO discount
+INSERT INTO DISCOUNT
 (MAX_USAGE,VALID_UNTIL_DATE,DISCOUNT_TYPE,PERCENTAGE_DISCOUNT,AMOUNT_DISCOUNT) VALUES
 (5, '2026-01-03 23:59:59', 'Percentage', 0.30, NULL),
 (5, '2026-04-01 23:59:59', 'Percentage', 0.15, NULL),
@@ -74,7 +74,7 @@ INSERT INTO discount
 (5, '2026-05-01 23:59:59', 'Amount', NULL, 15000),
 (5, '2026-05-01 23:59:59', 'Amount', NULL, 50000);
 
-INSERT INTO passenger
+INSERT INTO PASSENGER
 (ACCOUNT_ID, GRABCOINS) VALUES
 (1,64),
 (2,20),
@@ -82,7 +82,7 @@ INSERT INTO passenger
 (4,22),
 (5,12);
 
-INSERT INTO driver
+INSERT INTO DRIVER
 (ACCOUNT_ID, DRIVER_LICENSE_GRADE, CURRENT_BALANCE) VALUES
 (6,'A1',1000000),
 (7,'A1',1500000),
@@ -90,7 +90,7 @@ INSERT INTO driver
 (9,'A1',600000),
 (10,'A2',2000000);
 
-INSERT INTO referral
+INSERT INTO REFERRAL
 (DRIVER_ID, REFERRER_ID) VALUES
 (6,10),
 (7,6),
@@ -98,7 +98,7 @@ INSERT INTO referral
 (9,6),
 (10,6);
 
-INSERT INTO bank_account
+INSERT INTO BANK_ACCOUNT
 (BANK_NAME,ACCOUNT_NUMBER,DRIVER_ID) VALUES
 ('BIDV','179784021',6),
 ('BIDV','513661723',7),
@@ -107,7 +107,7 @@ INSERT INTO bank_account
 ('Vietcombank','370610',10);
 
 -- Làm gì có chuyện một trip driver dùng hai ba vehicle, phân thân ra à? Bởi vậy nó mới unique đấy.
-INSERT INTO vehicle
+INSERT INTO VEHICLE
 (PLATE_NUMBER,MAKE,MODEL,COLOR,CAPACITY,REGISTRANT_ID,USING_DRIVER_ID) VALUES
 ('52E-556.83','Ford','EcoSport','Bạc',6,8,NULL),   #tài số 8 ko xài xe hơi này hôm nay
 ('57A-987.55','Mitsubishi','Xpander','Bạc',6,8,8), #tài số 8 xài xe hơi này hôm nay
@@ -120,7 +120,7 @@ INSERT INTO vehicle
 ('50GNX-323.43','Honda Moto','CBR650R','Xanh lam',1,9,NULL), #tài số 9 ko xài xe này hôm nay
 ('55JB-155.65','Honda Moto','CBR650R','Xanh lam',1,10,NULL); #tài số 10 ko xài xe này hôm nay
 
-INSERT INTO transport_mode
+INSERT INTO TRANSPORT_MODE
 (TYPE, SEAT_CAPACITY, SERVICE_LEVEL) VALUES
 ('Bike', 1, 'Standard'),
 ('Bike', 1, 'Saver'),
@@ -129,7 +129,7 @@ INSERT INTO transport_mode
 ('Car', 4, 'Electric'),
 ('Car', 6, 'Standard');
 
-INSERT INTO vehicle_categorization (VEHICLE_ID, MODE_ID) VALUES
+INSERT INTO VEHICLE_CATEGORIZATION (VEHICLE_ID, MODE_ID) VALUES
 (1, 6),  -- EcoSport → Car 6-seat Standard
 (2, 6),  -- Xpander  → Car 6-seat Standard
 (3, 6),  -- Fortuner → Car 6-seat Standard
@@ -196,7 +196,6 @@ PASSENGER_ID, MODE_ID, BOOKING_TYPE, REQUEST_TIME) VALUES
  '2026-03-10 05:50:00', 'COMPLETED', NULL, 60000, 0, 60000,
  1, 1, 'Standard', NULL),
 
--- Scheduled trips (Đặt vào ngày 1/4/2024 để cho 3 ngày 1-3/4 dùng) (người passenger nữ Vương Kim đặt xe máy)
 (
  '268 Đ. Lý Thường Kiệt, Phường Diên Hồng, HCM', 10.772807, 106.658603,
  '153 Nguyễn Chí Thanh, Street, An Đông, Hồ Chí Minh, Vietnam',10.759362, 106.666394,
@@ -215,7 +214,6 @@ PASSENGER_ID, MODE_ID, BOOKING_TYPE, REQUEST_TIME) VALUES
  '2024-04-03 14:00:00', 'ONGOING', NULL, 130000, 0, 130000,
  5, 1, 'Scheduled', '2024-04-01 07:11:00'),
 
--- 6 standard trips bị CANCELLED (lý do: sai địa điểm đến)
 (
 '268 Đ. Lý Thường Kiệt, Phường Diên Hồng, HCM', 10.772807, 106.658603,
 '86 Đ. Số 23, Tân Mỹ, Hồ Chí Minh 70000, Vietnam',10.714079, 106.728499,
@@ -253,7 +251,7 @@ PASSENGER_ID, MODE_ID, BOOKING_TYPE, REQUEST_TIME) VALUES
 4, 1, 'Standard', NULL
 );
 
-INSERT INTO trip_discount
+INSERT INTO TRIP_DISCOUNT
 (TRIP_ID, DISCOUNT_ID) VALUES
 (1,1),
 (2,2),
@@ -261,7 +259,7 @@ INSERT INTO trip_discount
 (4,4),
 (5,5);
 
-INSERT INTO cancelled_trip
+INSERT INTO CANCELLED_TRIP
 (TRIP_ID, CANCELLATION_REASON) VALUES
 (11,'Kế hoạch thay đổi'),
 (12,'Kế hoạch thay đổi'),
@@ -270,7 +268,7 @@ INSERT INTO cancelled_trip
 (15,'Kế hoạch thay đổi'),
 (16,'Kế hoạch thay đổi');
 
-INSERT INTO assigned_trip
+INSERT INTO ASSIGNED_TRIP
 (TRIP_ID, FROM_TIME, DRIVER_ID) VALUES
 (1,'2026-01-03 08:15:00',8),
 (2,'2026-04-01 14:35:00',9),
@@ -283,7 +281,7 @@ INSERT INTO assigned_trip
 (9,'2024-04-02 14:05:00',10),
 (10,'2024-04-03 14:05:00',10);
 
-INSERT INTO completed_trip
+INSERT INTO COMPLETED_TRIP
 (TRIP_ID,TO_TIME,OBTAINED_GRABCOIN,RATING_STARS,FEEDBACK,DRIVER_PAY) VALUES
 (1,'2026-01-03 08:30:00',14,5,'Chuyển đi 5 sao',29400),#discount: percentage 0.3
 (2,'2026-04-01 15:03:00',42,5,'Chuyển đi 5 sao',85000),#discount: percentage 0.15
@@ -293,7 +291,7 @@ INSERT INTO completed_trip
 (6,'2026-03-01 20:22:00',20,5,'Chuyển đi 5 sao',40000),
 (7,'2026-03-10 06:11:00',30,5,'Chuyển đi 5 sao',60000);
 
-INSERT INTO payment_method 
+INSERT INTO PAYMENT_METHOD 
 (TYPE, ACCOUNT_IDENTIFIER, PASSENGER_ID) VALUES
 ('Card','OCB374777',3),
 ('Card','OCB315089',3),
@@ -301,7 +299,7 @@ INSERT INTO payment_method
 ('E-Wallet','MOMO0276301993',4),
 ('Card','VCB5465155',2);
 
-INSERT INTO payment_transaction
+INSERT INTO PAYMENT_TRANSACTION
 (PAYMENT_AMOUNT, DATE_TIME, PAID_BY_CASH, TIP, TRIP_ID, PAYMENT_METHOD_ID) VALUES
 (29000,'2026-01-03 08:32:00',TRUE,0,1,NULL),
 (85000,'2026-04-01 15:05:00',FALSE,0,2,1),  
@@ -311,7 +309,7 @@ INSERT INTO payment_transaction
 (40000,'2026-03-01 20:24:00',TRUE,0,6,NULL),
 (60000,'2026-03-10 06:13:00',TRUE,0,7,NULL);
 
-INSERT INTO saved_location
+INSERT INTO SAVED_LOCATION
 (PASSENGER_ID, SUGGESTIVE_NAME, ADDRESS, COORDINATE_Y, COORDINATE_X) VALUES
 (1,'BK cs2','khu phố Tân Lập, Dong Hoa, Ho Chi Minh, Vietnam',10.880365, 106.805598),
 (1,'bk cs1','268 Đ. Lý Thường Kiệt, Phường 14, Diên Hồng, Hồ Chí Minh 70000, Vietnam',10.771912, 106.657952),
