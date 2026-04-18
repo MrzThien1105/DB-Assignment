@@ -208,3 +208,165 @@ BEGIN
     END IF;
 END//
 DELIMITER ;
+
+-- Constraint 2 & 3: Discount validity and usage limit
+CREATE TRIGGER TRIP_DISCOUNT_BEFORE_INSERT
+BEFORE INSERT ON TRIP_DISCOUNT
+FOR EACH ROW
+BEGIN
+    DECLARE booking_time DATETIME;
+    DECLARE valid_until DATETIME;
+    DECLARE current_usage INT;
+    DECLARE max_usage INT;
+
+    SELECT BOOKING_TIME INTO booking_time FROM TRIP WHERE TRIP_ID = NEW.TRIP_ID;
+    SELECT VALID_UNTIL_DATE, MAX_USAGE INTO valid_until, max_usage
+    FROM DISCOUNT
+    WHERE DISCOUNT_ID = NEW.DISCOUNT_ID;
+
+    IF valid_until <= booking_time THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Semantic constraint violated: Discount expired before trip booking time.';
+    END IF;
+
+    SELECT COUNT(*) INTO current_usage FROM TRIP_DISCOUNT WHERE DISCOUNT_ID = NEW.DISCOUNT_ID;
+
+    IF max_usage IS NOT NULL AND current_usage + 1 > max_usage THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Semantic constraint violated: Discount maximum usage limit exceeded.';
+    END IF;
+END//
+
+CREATE TRIGGER TRIP_DISCOUNT_BEFORE_UPDATE
+BEFORE UPDATE ON TRIP_DISCOUNT
+FOR EACH ROW
+BEGIN
+    DECLARE booking_time DATETIME;
+    DECLARE valid_until DATETIME;
+    DECLARE current_usage INT;
+    DECLARE max_usage INT;
+
+    SELECT BOOKING_TIME INTO booking_time FROM TRIP WHERE TRIP_ID = NEW.TRIP_ID;
+    SELECT VALID_UNTIL_DATE, MAX_USAGE INTO valid_until, max_usage
+    FROM DISCOUNT
+    WHERE DISCOUNT_ID = NEW.DISCOUNT_ID;
+
+    IF valid_until <= booking_time THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Semantic constraint violated: Discount expired before trip booking time.';
+    END IF;
+
+    SELECT COUNT(*) INTO current_usage FROM TRIP_DISCOUNT WHERE DISCOUNT_ID = NEW.DISCOUNT_ID;
+
+    IF NEW.DISCOUNT_ID = OLD.DISCOUNT_ID THEN
+        IF max_usage IS NOT NULL AND current_usage > max_usage THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Semantic constraint violated: Discount maximum usage limit exceeded.';
+        END IF;
+    ELSE
+        IF max_usage IS NOT NULL AND current_usage + 1 > max_usage THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Semantic constraint violated: Discount maximum usage limit exceeded.';
+        END IF;
+    END IF;
+END//
+
+CREATE TRIGGER TRIP_BEFORE_UPDATE_DISCOUNT_VALIDITY
+BEFORE UPDATE ON TRIP
+FOR EACH ROW
+BEGIN
+    DECLARE invalid_count INT;
+
+    IF OLD.BOOKING_TIME <> NEW.BOOKING_TIME THEN
+        SELECT COUNT(*) INTO invalid_count
+        FROM TRIP_DISCOUNT td
+        JOIN DISCOUNT d ON td.DISCOUNT_ID = d.DISCOUNT_ID
+        WHERE td.TRIP_ID = NEW.TRIP_ID
+          AND d.VALID_UNTIL_DATE <= NEW.BOOKING_TIME;
+
+        IF invalid_count > 0 THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Semantic constraint violated: Trip booking time is after discount expiration.';
+        END IF;
+    END IF;
+END//
+
+CREATE TRIGGER DISCOUNT_BEFORE_UPDATE_USAGE_AND_VALIDITY
+BEFORE UPDATE ON DISCOUNT
+FOR EACH ROW
+BEGIN
+    DECLARE invalid_count INT;
+    DECLARE applied_count INT;
+
+    IF OLD.VALID_UNTIL_DATE <> NEW.VALID_UNTIL_DATE THEN
+        SELECT COUNT(*) INTO invalid_count
+        FROM TRIP_DISCOUNT td
+        JOIN TRIP t ON td.TRIP_ID = t.TRIP_ID
+        WHERE td.DISCOUNT_ID = NEW.DISCOUNT_ID
+          AND t.BOOKING_TIME >= NEW.VALID_UNTIL_DATE;
+
+        IF invalid_count > 0 THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Semantic constraint violated: Discount valid_until_date is earlier than a booked trip.''s booking time.';
+        END IF;
+    END IF;
+
+    IF OLD.MAX_USAGE <> NEW.MAX_USAGE AND NEW.MAX_USAGE IS NOT NULL THEN
+        SELECT COUNT(*) INTO applied_count FROM TRIP_DISCOUNT WHERE DISCOUNT_ID = NEW.DISCOUNT_ID;
+
+        IF applied_count > NEW.MAX_USAGE THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Semantic constraint violated: Discount maximum usage limit is less than current usage.';
+        END IF;
+    END IF;
+END//
+
+-- Constraint 4: Transaction date must be no earlier than completed trip end time
+CREATE TRIGGER PAYMENT_TRANSACTION_BEFORE_INSERT
+BEFORE INSERT ON PAYMENT_TRANSACTION
+FOR EACH ROW
+BEGIN
+    DECLARE trip_to_time DATETIME;
+
+    SELECT TO_TIME INTO trip_to_time FROM COMPLETED_TRIP WHERE TRIP_ID = NEW.TRIP_ID;
+
+    IF NEW.DATE_TIME < trip_to_time THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Semantic constraint violated: Payment date is before trip completion time.';
+    END IF;
+END//
+
+CREATE TRIGGER PAYMENT_TRANSACTION_BEFORE_UPDATE
+BEFORE UPDATE ON PAYMENT_TRANSACTION
+FOR EACH ROW
+BEGIN
+    DECLARE trip_to_time DATETIME;
+
+    SELECT TO_TIME INTO trip_to_time FROM COMPLETED_TRIP WHERE TRIP_ID = NEW.TRIP_ID;
+
+    IF NEW.DATE_TIME < trip_to_time THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Semantic constraint violated: Payment date is before trip completion time.';
+    END IF;
+END//
+
+CREATE TRIGGER COMPLETED_TRIP_BEFORE_UPDATE_PAYMENT_TIME
+BEFORE UPDATE ON COMPLETED_TRIP
+FOR EACH ROW
+BEGIN
+    DECLARE invalid_payment_count INT;
+
+    IF OLD.TO_TIME <> NEW.TO_TIME THEN
+        SELECT COUNT(*) INTO invalid_payment_count
+        FROM PAYMENT_TRANSACTION
+        WHERE TRIP_ID = NEW.TRIP_ID
+          AND DATE_TIME < NEW.TO_TIME;
+
+        IF invalid_payment_count > 0 THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Semantic constraint violated: Completed trip end time is after an existing payment transaction date.';
+        END IF;
+    END IF;
+END//
+
+DELIMITER;
