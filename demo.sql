@@ -12,3 +12,9 @@ CALL GET_DRIVER_VEHICLE_LIST(8, 'Bike', NULL, 'MAKE');
 
 --  Lọc car của Tài xế 8, capacity >= 4
 CALL GET_DRIVER_VEHICLE_LIST(8, 'Car', 4, 'CAPACITY_ASC');
+
+-- Test procedure 2
+-- 6 months
+CALL GET_MONTHLY_COMPLETED_TRIPS_REPORT(6);
+-- 1 month
+CALL GET_MONTHLY_COMPLETED_TRIPS_REPORT(1);

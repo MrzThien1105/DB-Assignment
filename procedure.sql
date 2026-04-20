@@ -119,3 +119,25 @@ BEGIN
 END$$
 
 DELIMITER ;
+
+-- Procedure 2: Báo cáo số lượng chuyến đi đã hoàn thành theo tháng trong khoảng thời gian nhất định
+DELIMITER //
+
+CREATE PROCEDURE GET_MONTHLY_COMPLETED_TRIPS_REPORT(
+    IN p_months_back INT
+)
+BEGIN
+    SELECT 
+        DATE_FORMAT(C.TO_TIME, '%Y-%m') AS Month, 
+        COUNT(T.TRIP_ID) AS Total_Completed_Trips
+    FROM TRIP T
+    JOIN COMPLETED_TRIP C ON T.TRIP_ID = C.TRIP_ID
+    WHERE 
+        C.TO_TIME >= DATE_SUB(CURRENT_DATE, INTERVAL p_months_back MONTH) 
+    GROUP BY Month
+    HAVING 
+        Total_Completed_Trips > 0
+    ORDER BY Month ASC;
+END //
+
+DELIMITER ;
