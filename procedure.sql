@@ -1,4 +1,4 @@
-DELIMITER / /
+DELIMITER //
 
 -- p_mode_ids_list: vehicle category for this vehicle. for exapmle: command-separated '1,2', respectively standard bike and saver bike
 -- p- prefix stands for 'parameter'
@@ -120,10 +120,8 @@ BEGIN
         V.VEHICLE_ID ASC;
 END //
 
-DELIMITER;
 
 -- Procedure 2: Báo cáo số lượng chuyến đi đã hoàn thành theo tháng trong khoảng thời gian nhất định
-DELIMITER / /
 
 CREATE PROCEDURE GET_PASSENGER_MONTHLY_REPORT(
     IN p_passenger_id INT,
@@ -144,12 +142,10 @@ BEGIN
     ORDER BY Month ASC;
 END //
 
-DELIMITER;
 
 -- Procedure 3: Passenger Trip History
 -- A complex user-facing query that retrieves a detailed, paginated history of a passenger's trips,
 -- joining across multiple tables to include driver, vehicle, and feedback details.
-DELIMITER / /
 
 CREATE PROCEDURE GET_PASSENGER_TRIP_HISTORY(
     IN p_passenger_id INT,
@@ -177,7 +173,9 @@ BEGIN
         TM.SERVICE_LEVEL,
         U.NAME AS Driver_Name,
         CT.RATING_STARS,
-        CT.FEEDBACK
+        CT.FEEDBACK,
+        AT.FROM_TIME AS Start_Time,
+        CT.TO_TIME AS Completion_Time
     FROM TRIP T
     JOIN TRANSPORT_MODE TM ON T.MODE_ID = TM.MODE_ID
     LEFT JOIN ASSIGNED_TRIP AT ON T.TRIP_ID = AT.TRIP_ID
@@ -188,4 +186,238 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END //
 
-DELIMITER;
+
+-- Procedure 4: Driver Trip History
+-- Retrieves a detailed, paginated history of a driver's completed trips,
+-- joining across multiple tables to include passenger, vehicle, and trip details.
+
+CREATE PROCEDURE GET_DRIVER_TRIP_HISTORY(
+    IN p_driver_id INT,
+    IN p_limit INT,
+    IN p_offset INT
+)
+BEGIN
+    -- Input validation for pagination
+    IF p_limit IS NULL OR p_limit <= 0 THEN
+        SET p_limit = 10;
+    END IF;
+    IF p_offset IS NULL OR p_offset < 0 THEN
+        SET p_offset = 0;
+    END IF;
+
+    SELECT 
+        T.TRIP_ID,
+        T.STATUS,
+        T.BOOKING_TIME,
+        T.FROM_ADDRESS,
+        T.TO_ADDRESS,
+        T.FINAL_PRICE,
+        TM.TYPE AS Vehicle_Type,
+        TM.SERVICE_LEVEL,
+        U.NAME AS Passenger_Name,
+        CT.RATING_STARS,
+        CT.FEEDBACK,
+        AT.FROM_TIME AS Start_Time,
+        CT.TO_TIME AS Completion_Time
+    FROM TRIP T
+    JOIN TRANSPORT_MODE TM ON T.MODE_ID = TM.MODE_ID
+    JOIN ASSIGNED_TRIP AT ON T.TRIP_ID = AT.TRIP_ID
+    JOIN USER_ACCOUNT U ON T.PASSENGER_ID = U.ACCOUNT_ID
+    LEFT JOIN COMPLETED_TRIP CT ON T.TRIP_ID = CT.TRIP_ID
+    WHERE AT.DRIVER_ID = p_driver_id
+    ORDER BY T.BOOKING_TIME DESC
+    LIMIT p_limit OFFSET p_offset;
+END //
+
+
+-- SIGN_UP_PASSENGER
+-- Parameters:
+--   p_name: Full name of the passenger
+--   p_phone_number: Phone number (must be 10 digits starting with 0)
+--   p_email: Email address
+--   p_password: Password
+--   p_gender: Gender ('Male' or 'Female', optional)
+-- Returns:
+--   p_account_id: The created account ID, or -1 if error
+CREATE PROCEDURE SIGN_UP_PASSENGER(
+    IN p_name VARCHAR(30),
+    IN p_phone_number VARCHAR(10),
+    IN p_email VARCHAR(50),
+    IN p_password TEXT,
+    IN p_gender ENUM('Male', 'Female'),
+    OUT p_account_id INT
+)
+BEGIN
+    DECLARE v_existing_count INT DEFAULT 0;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        SET p_account_id = -1;
+        ROLLBACK;
+    END;
+
+    -- Validate inputs
+    IF p_name IS NULL OR CHAR_LENGTH(TRIM(p_name)) = 0 THEN
+        SET p_account_id = -1;
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Name cannot be empty';
+    END IF;
+
+    IF p_phone_number IS NULL OR p_phone_number NOT REGEXP '^0[0-9]{9}$' THEN
+        SET p_account_id = -1;
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid phone number format. Must be 10 digits starting with 0';
+    END IF;
+
+    IF p_email IS NULL OR p_email NOT REGEXP '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$' THEN
+        SET p_account_id = -1;
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid email format';
+    END IF;
+
+    IF p_password IS NULL OR CHAR_LENGTH(p_password) < 6 THEN
+        SET p_account_id = -1;
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Password must be at least 6 characters';
+    END IF;
+
+    -- Check for duplicates
+    SELECT COUNT(*) INTO v_existing_count 
+    FROM USER_ACCOUNT 
+    WHERE EMAIL = p_email OR PHONE_NUMBER = p_phone_number;
+
+    IF v_existing_count > 0 THEN
+        SET p_account_id = -1;
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Email or phone number already exists';
+    END IF;
+
+    -- Start transaction
+    START TRANSACTION;
+
+    -- Insert into USER_ACCOUNT
+    INSERT INTO USER_ACCOUNT (NAME, PHONE_NUMBER, EMAIL, ACCOUNT_PASSWORD, GENDER)
+    VALUES (p_name, p_phone_number, p_email, p_password, p_gender);
+
+    -- Get the inserted ID
+    SET p_account_id = LAST_INSERT_ID();
+
+    -- Insert into PASSENGER
+    INSERT INTO PASSENGER (ACCOUNT_ID, GRABCOINS)
+    VALUES (p_account_id, 0);
+
+    -- Commit transaction
+    COMMIT;
+END //
+
+-- SIGN_UP_DRIVER
+-- Parameters:
+--   p_name: Full name of the driver
+--   p_phone_number: Phone number (must be 10 digits starting with 0)
+--   p_email: Email address
+--   p_password: Password
+--   p_gender: Gender ('Male' or 'Female', optional)
+--   p_driver_license_grade: Driver license grade (A1, A2, B2, C, D, E, F)
+-- Returns:
+--   p_account_id: The created account ID, or -1 if error
+CREATE PROCEDURE SIGN_UP_DRIVER(
+    IN p_name VARCHAR(30),
+    IN p_phone_number VARCHAR(10),
+    IN p_email VARCHAR(50),
+    IN p_password TEXT,
+    IN p_gender ENUM('Male', 'Female'),
+    IN p_driver_license_grade ENUM('A1', 'A2', 'B2', 'C', 'D', 'E', 'F'),
+    OUT p_account_id INT
+)
+BEGIN
+    DECLARE v_existing_count INT DEFAULT 0;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        SET p_account_id = -1;
+        ROLLBACK;
+    END;
+
+    -- Validate inputs
+    IF p_name IS NULL OR CHAR_LENGTH(TRIM(p_name)) = 0 THEN
+        SET p_account_id = -1;
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Name cannot be empty';
+    END IF;
+
+    IF p_phone_number IS NULL OR p_phone_number NOT REGEXP '^0[0-9]{9}$' THEN
+        SET p_account_id = -1;
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid phone number format. Must be 10 digits starting with 0';
+    END IF;
+
+    IF p_email IS NULL OR p_email NOT REGEXP '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$' THEN
+        SET p_account_id = -1;
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid email format';
+    END IF;
+
+    IF p_password IS NULL OR CHAR_LENGTH(p_password) < 6 THEN
+        SET p_account_id = -1;
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Password must be at least 6 characters';
+    END IF;
+
+    IF p_driver_license_grade IS NULL THEN
+        SET p_account_id = -1;
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Driver license grade is required';
+    END IF;
+
+    -- Check for duplicates
+    SELECT COUNT(*) INTO v_existing_count 
+    FROM USER_ACCOUNT 
+    WHERE EMAIL = p_email OR PHONE_NUMBER = p_phone_number;
+
+    IF v_existing_count > 0 THEN
+        SET p_account_id = -1;
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Email or phone number already exists';
+    END IF;
+
+    -- Start transaction
+    START TRANSACTION;
+
+    -- Insert into USER_ACCOUNT
+    INSERT INTO USER_ACCOUNT (NAME, PHONE_NUMBER, EMAIL, ACCOUNT_PASSWORD, GENDER)
+    VALUES (p_name, p_phone_number, p_email, p_password, p_gender);
+
+    -- Get the inserted ID
+    SET p_account_id = LAST_INSERT_ID();
+
+    -- Insert into DRIVER
+    INSERT INTO DRIVER (ACCOUNT_ID, DRIVER_LICENSE_GRADE, CURRENT_BALANCE)
+    VALUES (p_account_id, p_driver_license_grade, 0);
+
+    -- Commit transaction
+    COMMIT;
+END //
+
+-- Procedure: GET_USER_INFO
+-- Purpose: Retrieve complete user information (works for both passenger and driver)
+-- Parameters:
+--   p_account_id: Account ID to retrieve
+-- Returns:
+--   User details including account type (passenger/driver) and relevant fields
+CREATE PROCEDURE GET_USER_INFO(
+    IN p_account_id INT
+)
+BEGIN
+    SELECT 
+        u.ACCOUNT_ID,
+        u.NAME,
+        u.EMAIL,
+        u.PHONE_NUMBER,
+        u.GENDER,
+        u.AVATAR,
+        CASE 
+            WHEN p.ACCOUNT_ID IS NOT NULL THEN 'Passenger'
+            WHEN d.ACCOUNT_ID IS NOT NULL THEN 'Driver'
+            ELSE 'Unknown'
+        END AS USER_TYPE,
+        p.GRABCOINS,
+        d.DRIVER_LICENSE_GRADE,
+        d.CURRENT_BALANCE,
+        COALESCE(ROUND(AVG(ct.RATING_STARS), 2), 0) AS AVERAGE_RATING
+    FROM USER_ACCOUNT u
+    LEFT JOIN PASSENGER p ON u.ACCOUNT_ID = p.ACCOUNT_ID
+    LEFT JOIN DRIVER d ON u.ACCOUNT_ID = d.ACCOUNT_ID
+    LEFT JOIN ASSIGNED_TRIP at ON d.ACCOUNT_ID = at.DRIVER_ID
+    LEFT JOIN COMPLETED_TRIP ct ON at.TRIP_ID = ct.TRIP_ID
+    WHERE u.ACCOUNT_ID = p_account_id
+    GROUP BY u.ACCOUNT_ID;
+END //
+
+DELIMITER ;

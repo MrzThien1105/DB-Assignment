@@ -109,13 +109,11 @@ BEGIN
 
 END//
 
-DELIMITER;
 
 -- Function 2: Driver Bonus Calculation
 -- A function that calculates a monthly bonus for drivers based on their completed trips.
 -- The bonus is influenced by multiple factors, including the average rating of their trips,
 -- the type of vehicle they used, and whether they completed any trips during peak hours.
-DELIMITER / /
 
 CREATE FUNCTION CALCULATE_DRIVER_BONUS_FEE(
     p_driver_id INT,
@@ -187,6 +185,45 @@ BEGIN
     CLOSE trip_cursor;
 
     RETURN v_total_bonus;
+END //
+
+
+-- SIGN_IN
+-- Purpose: Authenticate user and get their information
+-- Parameters:
+--   p_email: Email address
+--   p_password: Password
+-- Returns:
+--   Account ID if successful, -1 if authentication fails
+CREATE FUNCTION SIGN_IN(
+    p_email VARCHAR(50),
+    p_password TEXT
+)
+RETURNS INT
+DETERMINISTIC
+READS SQL DATA
+BEGIN
+    DECLARE v_account_id INT DEFAULT -1;
+    DECLARE v_stored_password TEXT;
+
+    -- Get the account ID and password
+    SELECT ACCOUNT_ID, ACCOUNT_PASSWORD 
+    INTO v_account_id, v_stored_password
+    FROM USER_ACCOUNT 
+    WHERE EMAIL = p_email 
+    LIMIT 1;
+
+    -- Check if user exists
+    IF v_account_id IS NULL THEN
+        RETURN -1;
+    END IF;
+
+    -- Check if password matches
+    IF v_stored_password = p_password THEN
+        RETURN v_account_id;
+    ELSE
+        RETURN -1;
+    END IF;
 END //
 
 DELIMITER ;
