@@ -185,22 +185,20 @@ BEGIN
         
         COUNT(T.TRIP_ID) AS Total_Trips,
         
-        -- Service Tier Breakdown
+        -- Service Tier
         SUM(CASE WHEN M.SERVICE_LEVEL = 'Electric' THEN 1 ELSE 0 END) AS Electric_Rides,
         SUM(CASE WHEN M.SERVICE_LEVEL = 'Saver' THEN 1 ELSE 0 END) AS Saver_Rides,
         
         -- Financial Analysis
         SUM(T.ESTIMATED_PRICE) AS Gross_Estimate,
         SUM(T.FINAL_PRICE) AS Actual_Spent,
-        
-        -- Savings Analysis
         SUM(T.ESTIMATED_PRICE - T.FINAL_PRICE) AS Total_Saved,
         
         -- Loyalty
         SUM(C.OBTAINED_GRABCOIN) AS Standard_Coins_Earned,
         
-        -- Siêu super complex
-        GRAB_COIN_BONUS(p_passenger_id, MONTH(C.TO_TIME), YEAR(C.TO_TIME)) AS Loyalty_Bonus_Earned
+        -- Super duper advanced
+        GRAB_COIN_BONUS(p_passenger_id, MONTH(MAX(C.TO_TIME)), YEAR(MAX(C.TO_TIME))) AS Loyalty_Bonus_Earned
 
     FROM TRIP T
     JOIN COMPLETED_TRIP C ON T.TRIP_ID = C.TRIP_ID
@@ -209,8 +207,7 @@ BEGIN
         T.PASSENGER_ID = p_passenger_id AND
         C.TO_TIME >= DATE_SUB(LAST_DAY(CURRENT_DATE), INTERVAL p_months_back MONTH) 
     GROUP BY 
-        YEAR(C.TO_TIME), 
-        MONTH(C.TO_TIME)
+        Reporting_Month
     ORDER BY 
         Reporting_Month DESC;
 END //
