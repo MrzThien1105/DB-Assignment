@@ -261,7 +261,50 @@ BEGIN
     SET NEW.PAYMENT_AMOUNT = v_final_price;
 END//
 
+-- Add these triggers for both 6 and 7: Updating trip status can also cause collisions
+CREATE TRIGGER DRIVER_ACTIVE_TRIP_CHECK
+BEFORE UPDATE ON TRIP
+FOR EACH ROW
+BEGIN
+    DECLARE active_trip_count INT;
+    IF NEW.STATUS IN ('ASSIGNED','DRIVER_ARRIVED','ONGOING') THEN
+        -- Query the passenger/driver id
+        -- Query all trips for the passenger/driver that have active statuses 
+        -- that are NOT the trip we are updating
+        SELECT COUNT(*)
+        INTO active_trip_count
+        FROM T
+END//
+
 -- Constraint 6: Single Ongoing Trip per Driver
+
+CREATE TRIGGER DRIVER_ACTIVE_TRIP_CHECK
+BEFORE UPDATE ON TRIP
+FOR EACH ROW
+BEGIN
+    DECLARE driver_id INT;
+    DECLARE other_active_trip INT DEFAULT 0;
+    IF NEW.STATUS IN ('ASSIGNED', 'DRIVER_ARRIVED', 'ONGOING') THEN
+
+        SELECT DRIVER_ID INTO driver_id FROM ASSIGNED_TRIP
+        WHERE TRIP_ID = NEW.TRIP_ID
+        LIMIT 1;
+
+        IF driver_id IS NOT NULL THEN
+            SELECT COUNT(*) INTO other_active_trip FROM TRIP
+            JOIN ASSIGNED_TRIP ON TRIP.TRIP_ID = ASSIGNED_TRIP.TRIP_ID
+            WHERE ASSIGNED_TRIP.DRIVER_ID = driver_id
+                AND TRIP.STATUS IN ('ASSIGNED', 'DRIVER_ARRIVED', 'ONGOING')
+                AND TRIP.TRIP_ID <> NEW.TRIP_ID;
+
+            IF other_active_trip > 0 THEN
+                SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'The driver already has at least one another active trip. Active trips are trips of status: ASSIGNED, DRIVER_ASSIGNED, ONGOING';
+            END IF;
+        END IF;
+    END IF;
+END;
+
 CREATE TRIGGER DRIVER_ONGOING_CHECK
 BEFORE INSERT ON ASSIGNED_TRIP
 FOR EACH ROW
@@ -283,6 +326,24 @@ BEGIN
 END//
 
 -- Constraint 7: Single Ongoing Trip per Passenger
+CREATE TRIGGER PASSENGER_ACTIVE_TRIP_CHECK
+BEFORE UPDATE ON TRIP
+FOR EACH ROW
+BEGIN
+    DECLARE other_active_trip INT DEFAULT 0;
+    IF NEW.STATUS = 'ONGOING' THEN
+        SELECT COUNT(*) INTO other_active_trip FROM TRIP
+        WHERE TRIP.PASSENGER_ID = NEW.PASSENGER_ID
+            AND TRIP.STATUS = 'ONGOING'
+            AND TRIP.TRIP_ID <> NEW.TRIP_ID;
+
+        IF other_active_trip > 0 THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'The passenger already has at least one another active trip. Active trips are trips of status: ONGOING';
+        end if;
+    END IF;
+END;
+
 CREATE TRIGGER PASSENGER_ONGOING_CHECK
 BEFORE INSERT ON ASSIGNED_TRIP
 FOR EACH ROW
