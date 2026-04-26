@@ -1,3 +1,4 @@
+-- Active: 1775981929461@@localhost@3306@GRAB
 DELIMITER //
 
 -- p_mode_ids_list: vehicle category for this vehicle. for exapmle: command-separated '1,2', respectively standard bike and saver bike
@@ -148,25 +149,72 @@ END //
 
 -- Procedure 2: Báo cáo số lượng chuyến đi đã hoàn thành theo tháng trong khoảng thời gian nhất định
 
+-- Too simple?
+-- CREATE PROCEDURE GET_PASSENGER_MONTHLY_REPORT(
+--     IN p_passenger_id INT,
+--     IN p_months_back INT
+-- )
+-- BEGIN
+--     SELECT 
+--         DATE_FORMAT(C.TO_TIME, '%Y-%m') AS Month, 
+--         COUNT(T.TRIP_ID) AS Total_Completed_Trips
+--     FROM TRIP T
+--     JOIN COMPLETED_TRIP C ON T.TRIP_ID = C.TRIP_ID
+--     WHERE 
+--         T.PASSENGER_ID = p_passenger_id AND
+--         C.TO_TIME >= DATE_SUB(CURRENT_DATE, INTERVAL p_months_back MONTH) 
+--     GROUP BY Month
+--     HAVING 
+--         Total_Completed_Trips > 0
+--     ORDER BY Month ASC;
+-- END //
+
+DELIMITER //
+
 CREATE PROCEDURE GET_PASSENGER_MONTHLY_REPORT(
     IN p_passenger_id INT,
     IN p_months_back INT
 )
 BEGIN
+    IF NOT EXISTS (SELECT 1 FROM PASSENGER WHERE ACCOUNT_ID = p_passenger_id) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Passenger ID does not exist.';
+    END IF;
+
     SELECT 
-        DATE_FORMAT(C.TO_TIME, '%Y-%m') AS Month, 
-        COUNT(T.TRIP_ID) AS Total_Completed_Trips
+        DATE_FORMAT(C.TO_TIME, '%Y-%m') AS Reporting_Month,
+        
+        COUNT(T.TRIP_ID) AS Total_Trips,
+        
+        -- Service Tier
+        SUM(CASE WHEN M.SERVICE_LEVEL = 'Electric' THEN 1 ELSE 0 END) AS Electric_Rides,
+        SUM(CASE WHEN M.SERVICE_LEVEL = 'Saver' THEN 1 ELSE 0 END) AS Saver_Rides,
+        
+        -- Financial Analysis
+        SUM(T.ESTIMATED_PRICE) AS Gross_Estimate,
+        SUM(T.FINAL_PRICE) AS Actual_Spent,
+        SUM(T.ESTIMATED_PRICE - T.FINAL_PRICE) AS Total_Saved,
+        
+        -- Loyalty
+        SUM(C.OBTAINED_GRABCOIN) AS Standard_Coins_Earned,
+        
+        -- Super duper advanced
+        GRAB_COIN_BONUS(p_passenger_id, MONTH(MAX(C.TO_TIME)), YEAR(MAX(C.TO_TIME))) AS Loyalty_Bonus_Earned
+
     FROM TRIP T
     JOIN COMPLETED_TRIP C ON T.TRIP_ID = C.TRIP_ID
+    JOIN TRANSPORT_MODE M ON T.MODE_ID = M.MODE_ID
     WHERE 
         T.PASSENGER_ID = p_passenger_id AND
-        C.TO_TIME >= DATE_SUB(CURRENT_DATE, INTERVAL p_months_back MONTH) 
-    GROUP BY Month
-    HAVING 
-        Total_Completed_Trips > 0
-    ORDER BY Month ASC;
+        C.TO_TIME >= DATE_SUB(LAST_DAY(CURRENT_DATE), INTERVAL p_months_back MONTH) 
+    GROUP BY 
+        Reporting_Month
+    HAVING
+        Total_Trips > 0
+    ORDER BY 
+        Reporting_Month DESC;
 END //
 
+DELIMITER ;
 
 -- Procedure 3: Passenger Trip History
 -- A complex user-facing query that retrieves a detailed, paginated history of a passenger's trips,
